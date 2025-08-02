@@ -3,17 +3,20 @@
 import {
   createContext,
   useContext,
-  useEffect,
   useState,
+  useEffect,
   ReactNode,
 } from "react";
 import { useAccount } from "wagmi";
-import { useListAccounts, useSignInEmail } from "@0xsequence/connect";
+import { useSignInEmail, useListAccounts } from "@0xsequence/connect";
 
 interface AuthContextType {
   walletAddress: string | null;
   email: string | null;
+  accountId: string | null;
   isAuthenticated: boolean;
+  isAuthLoading: boolean;
+  refetchAccounts: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,9 +24,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { address } = useAccount();
   const email = useSignInEmail();
-  const { data } = useListAccounts();
+  const {
+    data: accountData,
+    isLoading: isAuthLoading,
+    refetch: refetchAccounts,
+  } = useListAccounts();
 
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [accountId, setAccountId] = useState<string | null>(null);
 
   useEffect(() => {
     if (address) {
@@ -33,10 +41,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [address]);
 
+  useEffect(() => {
+    if (
+      accountData?.currentAccountId &&
+      accountData?.accounts[0]?.email !== ""
+    ) {
+      setAccountId(accountData.currentAccountId);
+    } else {
+      setAccountId(null);
+    }
+  }, [accountData]);
+
   const value: AuthContextType = {
     walletAddress,
-    email: email || null,
-    isAuthenticated: !!address && !!email,
+    email: email ?? null,
+    accountId,
+    isAuthenticated: !!(
+      walletAddress && accountData?.accounts[0]?.email !== ""
+    ),
+    isAuthLoading,
+    refetchAccounts,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -44,8 +68,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within AuthProvider");
-  }
+  if (!context) throw new Error("useAuth must be used within AuthProvider");
   return context;
 };

@@ -7,21 +7,23 @@ import { useListAccounts } from "@0xsequence/connect";
 import Hero from "@/components/Hero";
 import Header from "@/components/Header";
 import CreateCliqueModal from "@/components/CreateCliqueModal";
+import Spinner from "@/components/Spinner";
 
 export default function HomePage() {
-  const { walletAddress, email, isAuthenticated } = useAuth();
+  const { isAuthenticated, isAuthLoading, refetchAccounts } = useAuth();
   const { data, isLoading, error, refetch } = useListAccounts();
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
-
+  const [checkAuth, setCheckAuth] = useState(false);
   useEffect(() => {
-    if (!isAuthenticated) {
-      toast.error("Please sign in to continue");
-      router.push("/");
+    if (data?.currentAccountId && data?.accounts[0]?.email !== "") {
+      setCheckAuth(true);
+    } else {
+      setCheckAuth(false);
     }
-  }, [isAuthenticated]);
+  }, [data]);
 
-  if (!isAuthenticated) return null;
+  if (isAuthLoading) return <Spinner />;
 
   return (
     <div className="min-h-screen  text-white relative">

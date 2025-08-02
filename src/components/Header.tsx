@@ -14,6 +14,7 @@ export default function Header() {
   const { address } = useAccount();
   const email = useSignInEmail();
   const { data, isLoading, error, refetch } = useListAccounts();
+  console.log("Data from header ", data);
 
   return (
     <header className="flex justify-between items-center bg-green-900 text-white px-4 py-3 opacity-95">
