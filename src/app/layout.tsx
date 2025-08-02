@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-import Login from "@/components/Login";
+import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import Providers from "./providers";
+import { Toaster } from "react-hot-toast";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,7 +36,7 @@ export default function RootLayout({
       >
         <Providers>
           <div className="min-h-screen bg-cover bg-center bg-no-repeat bg-[url('/bg-image2.jpg')]">
-            <Login />
+            <Toaster position="top-center" />
             {children}
             <BottomNav />
           </div>

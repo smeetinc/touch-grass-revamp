@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@0xsequence/checkout": "^5.3.8",
     "@0xsequence/connect": "^5.3.8",
     "@0xsequence/hooks": "^5.3.8",
     "@0xsequence/waas": "^2.3.23",
@@ -22,6 +23,7 @@
     "react": "19.1.0",
     "react-apple-signin-auth": "^1.1.2",
     "react-dom": "19.1.0",
+    "react-hot-toast": "^2.5.2",
     "react-icons": "^5.5.0",
     "react-simple-typewriter": "^5.0.1",
     "viem": "^2.33.2",

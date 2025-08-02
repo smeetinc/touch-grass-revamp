@@ -2,11 +2,18 @@
 import Image from "next/image";
 import Logo from "../../public/logo.png";
 import { BellRing, CircleUserRound } from "lucide-react";
-import { useWallet } from "@/context/WalletProvider";
+import {
+  useOpenConnectModal,
+  useSignInEmail,
+  useListAccounts,
+} from "@0xsequence/connect";
+import { useAccount, useSendTransaction } from "wagmi";
 
-// src/components/Header.tsx
 export default function Header() {
-  const { address, isConnected, connect, disconnect } = useWallet();
+  const { setOpenConnectModal } = useOpenConnectModal();
+  const { address } = useAccount();
+  const email = useSignInEmail();
+  const { data, isLoading, error, refetch } = useListAccounts();
 
   return (
     <header className="flex justify-between items-center bg-green-900 text-white px-4 py-3 opacity-95">
@@ -18,29 +25,34 @@ export default function Header() {
         />
       </div>
       <div className="flex items-center space-x-6">
-        <BellRing />
-        <CircleUserRound />
-        {isConnected ? (
-          <div className="flex items-center gap-4">
-            <span className="text-sm font-semibold">
-              {address?.slice(0, 6)}...{address?.slice(-4)}
-            </span>
-            <button
-              className="border border-[#32FF3E] text-white cursor-pointer font-semibold px-6 py-2 rounded hover:bg-white hover:text-[#32FF3E]"
-              onClick={disconnect}
-            >
-              Disconnect
-            </button>
-          </div>
-        ) : (
+        {!address ? (
           <button
-            className="border border-[#32FF3E] text-white cursor-pointer font-semibold px-6 py-2 rounded hover:bg-white hover:text-[#32FF3E]"
-            onClick={connect}
+            className="border border-[#32FF3E] text-white cursor-pointer font-semibold px-4 py-4 rounded hover:bg-white hover:text-[#32FF3E]"
+            onClick={() => setOpenConnectModal(true)}
           >
-            Connect Wallet
+            Sign In
           </button>
+        ) : (
+          <div className="flex items-center space-x-4">
+            <BellRing className="cursor-pointer" />
+            <CircleUserRound
+              onClick={() => setOpenConnectModal(true)}
+              className="cursor-pointer"
+            />
+          </div>
         )}
       </div>
+      {/*  <div>
+        <div>Current Account ID: {data?.currentAccountId}</div>
+        {data?.accounts.map((account) => (
+          <div key={account.id} className="account-item">
+            <div>ID: {account.id}</div>
+            <div>Type: {account.type}</div>
+            {account.email && <div>Email: {account.email}</div>}
+            {account.issuer && <div>Issuer: {account.issuer}</div>}
+          </div>
+        ))}
+      </div> */}
     </header>
   );
 }
