@@ -9,10 +9,12 @@ const walletConnectProjectId =
 
 export const config = createConfig("waas", {
   projectAccessKey,
-  position: "center",
-  defaultTheme: "dark",
+  position: "top-center",
+  defaultTheme: "light",
   signIn: {
     projectName: "TouchGrass",
+    logoUrl:
+      "https://storage.googleapis.com/sequence-prod-cluster-builder/projects/43072/wallet/signInlogoUrl_9cc0be01846109601f740966497b1205697cb91228b80d8ed0283f26916454dd.png",
   },
   defaultChainId: 421614,
   chainIds: [
