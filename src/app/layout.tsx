@@ -29,14 +29,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <link rel="preload" as="image" href="/bg-image2.jpg" />
 
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased `}
       >
         <Providers>
+          <Toaster position="top-center" />
           <div className="min-h-screen bg-cover bg-center bg-no-repeat bg-[url('/bg-image2.jpg')]">
-            <Toaster position="top-center" />
             {children}
             <BottomNav />
           </div>
