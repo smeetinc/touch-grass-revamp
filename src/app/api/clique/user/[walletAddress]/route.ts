@@ -4,11 +4,11 @@ import Clique from "@/models/Clique";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { walletAddress: string } }
+  { params }: { params: Promise<{ walletAddress: string }> }
 ) {
   await connectDB();
 
-  const { walletAddress } = params;
+  const { walletAddress } = await params;
 
   if (!walletAddress) {
     return NextResponse.json(
