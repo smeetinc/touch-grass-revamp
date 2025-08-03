@@ -4,11 +4,11 @@ import { NextResponse, NextRequest } from "next/server";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   await connectDB();
 
-  const { id } = params;
+  const { id } = await params;
   const { members } = await req.json();
 
   if (!Array.isArray(members)) {
