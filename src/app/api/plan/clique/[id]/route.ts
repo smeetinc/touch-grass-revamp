@@ -6,11 +6,11 @@ import Plan from "@/models/Plan"; // Ensure you have this model defined
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   await connectDB();
 
-  const { id: cliqueId } = params;
+  const { id: cliqueId } = await params;
 
   if (!cliqueId) {
     return NextResponse.json(
