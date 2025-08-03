@@ -23,15 +23,31 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { address } = useAccount();
-  const email = useSignInEmail();
+
   const {
     data: accountData,
     isLoading: isAuthLoading,
     refetch: refetchAccounts,
   } = useListAccounts();
 
+  const email = accountData?.accounts[0]?.email;
+
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [accountId, setAccountId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (walletAddress && email) {
+      fetch("/api/user", {
+        method: "POST",
+        body: JSON.stringify({ walletAddress, email }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          console.log("User profile:", data.user);
+        })
+        .catch((err) => console.error("User profile creation failed", err));
+    }
+  }, [walletAddress, email]);
 
   useEffect(() => {
     if (address) {

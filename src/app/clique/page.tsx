@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Share, UserPlus } from "lucide-react";
 import AddMembersModal from "@/components/AddMembersModal";
+import { useAuth } from "@/context/AuthContext";
 
 interface Clique {
   id: string;
@@ -12,25 +13,36 @@ interface Clique {
 }
 
 const CliquePage = () => {
+  const { walletAddress } = useAuth();
   const [addMembers, setAddMembers] = useState(false);
   const router = useRouter();
-  const [cliques, setCliques] = useState<Clique[]>([
-    { id: "1", name: "Jubi", memberCount: 5 },
-  ]);
+  const [loading, setLoading] = useState(true);
+  const [cliques, setCliques] = useState<Clique[]>([]);
 
   useEffect(() => {
-    // Check if there's a newly created clique
-    const newCliqueName = localStorage.getItem("currentClique");
-    if (newCliqueName) {
-      const newClique: Clique = {
-        id: Date.now().toString(),
-        name: newCliqueName,
-        memberCount: 1,
-      };
-      setCliques((prev) => [...prev, newClique]);
-      localStorage.removeItem("currentClique");
-    }
-  }, []);
+    const fetchCliques = async () => {
+      if (!walletAddress) return;
+
+      try {
+        const res = await fetch(`/api/clique?walletAddress=${walletAddress}`);
+        const data = await res.json();
+
+        const mapped = data.cliques.map((clique: any) => ({
+          id: clique._id,
+          name: clique.name,
+          memberCount: clique.members.length,
+        }));
+
+        setCliques(mapped);
+      } catch (err) {
+        console.error("Error fetching cliques", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCliques();
+  }, [walletAddress]);
 
   const handleShare = () => {
     // Generate referral link logic

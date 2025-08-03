@@ -62,7 +62,8 @@ const ProfilePage = () => {
               className="rounded-full"
             />
             <div>
-              <p className="font-semibold text-lg">@username</p>
+              <p className="font-semibold text-lg">@username</p>@
+              {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}
               <p className="text-sm text-gray-300">{email} • Etherlink</p>
             </div>
             <button className="ml-auto flex items-center text-sm border px-3 py-1 rounded hover:bg-white hover:text-black">

@@ -1,11 +1,23 @@
 // app/plan/page.tsx
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect } from "react";
+
 import { ArrowLeft, Share, UserPlus, MessageCircle } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 const PlanPage = () => {
+  const { walletAddress } = useAuth();
+  const searchParams = useSearchParams();
+  const cliqueIdFromUrl = searchParams.get("cliqueId");
+
+  const [existingCliques, setExistingCliques] = useState<any[]>([]);
+  const [selectedCliqueId, setSelectedCliqueId] = useState<string | null>(
+    cliqueIdFromUrl
+  );
+  const [newCliqueName, setNewCliqueName] = useState("");
+
   const router = useRouter();
   const [formData, setFormData] = useState({
     planTitle: "",
@@ -15,6 +27,18 @@ const PlanPage = () => {
     isPublic: true,
     isClique: false,
   });
+
+  useEffect(() => {
+    const fetchCliques = async () => {
+      const res = await fetch(`/api/clique/user/${walletAddress}`);
+      const data = await res.json();
+      setExistingCliques(data.cliques || []);
+    };
+
+    if (!cliqueIdFromUrl && walletAddress) {
+      fetchCliques();
+    }
+  }, [walletAddress, cliqueIdFromUrl]);
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({
@@ -39,10 +63,62 @@ const PlanPage = () => {
     alert("Join chat feature - this would open the chat for this plan");
   };
 
-  const handlePostPlan = () => {
-    // Store plan data and navigate to seal the vibe page
-    localStorage.setItem("planData", JSON.stringify(formData));
-    router.push("/plan/seal-vibe");
+  const handlePostPlan = async () => {
+    let cliqueId = cliqueIdFromUrl;
+
+    // If no cliqueId in URL, handle selection or creation
+    if (!cliqueId) {
+      if (newCliqueName.trim()) {
+        console.log("🟡 Sending to /api/clique:", {
+          name: newCliqueName.trim(),
+          creator: walletAddress,
+        });
+
+        const res = await fetch("/api/clique", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: newCliqueName.trim(),
+            walletAddress,
+          }),
+        });
+
+        const data = await res.json();
+        cliqueId = data?.clique?._id;
+      } else if (selectedCliqueId) {
+        cliqueId = selectedCliqueId;
+      } else {
+        alert("Please select or create a clique");
+        return;
+      }
+    }
+
+    if (!walletAddress || !formData.planTitle || !cliqueId) {
+      alert("Missing required data.");
+      return;
+    }
+
+    const res = await fetch("/api/plan", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ...formData,
+        cliqueId,
+        creator: walletAddress,
+      }),
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      router.push(`/clique/${cliqueId}`);
+    } else {
+      console.error("Failed to post plan", data.error);
+      alert("Error: " + data.error);
+    }
   };
 
   return (
@@ -184,6 +260,41 @@ const PlanPage = () => {
               </button>
             </div>
           </div>
+          {/* If no cliqueId in URL, show picker */}
+          {!cliqueIdFromUrl && (
+            <div className="mt-6 space-y-4">
+              <div>
+                <label className="text-white text-sm font-medium block mb-1">
+                  Choose Existing Clique
+                </label>
+                <select
+                  value={selectedCliqueId || ""}
+                  onChange={(e) => setSelectedCliqueId(e.target.value)}
+                  className="w-full bg-gray-800 text-white px-4 py-3 rounded-lg border border-gray-600"
+                >
+                  <option value="">-- Select Clique --</option>
+                  {existingCliques.map((clique) => (
+                    <option key={clique._id} value={clique._id}>
+                      {clique.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-white text-sm font-medium block mb-1">
+                  Or Create New Clique
+                </label>
+                <input
+                  type="text"
+                  value={newCliqueName}
+                  onChange={(e) => setNewCliqueName(e.target.value)}
+                  placeholder="New Clique Name"
+                  className="w-full bg-gray-800 text-white px-4 py-3 rounded-lg border border-gray-600"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Action Buttons */}
           <div className="flex space-x-4 mt-8">

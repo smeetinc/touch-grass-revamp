@@ -3,24 +3,45 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Share, UserPlus } from "lucide-react";
+import { useParams } from "next/navigation";
 
 interface Clique {
   id: string;
   name: string;
   memberCount: number;
+  isActive?: boolean;
 }
 
 const CliqueDetailPage = () => {
+  const { id } = useParams();
   const router = useRouter();
   const [clique, setClique] = useState<Clique | null>(null);
 
   useEffect(() => {
-    // Get selected clique from localStorage or fetch from API
-    const selectedClique = localStorage.getItem("selectedClique");
-    if (selectedClique) {
-      setClique(JSON.parse(selectedClique));
-    }
-  }, []);
+    const fetchClique = async () => {
+      if (!id) return;
+
+      try {
+        const res = await fetch(`/api/clique/${id}`);
+        const data = await res.json();
+
+        if (res.ok) {
+          setClique({
+            id: data.clique._id,
+            name: data.clique.name,
+            memberCount: data.clique.members.length,
+            isActive: data.clique.isActive,
+          });
+        } else {
+          console.error("Error fetching clique:", data.error);
+        }
+      } catch (err) {
+        console.error("Failed to fetch clique", err);
+      }
+    };
+
+    fetchClique();
+  }, [id]);
 
   const handleShare = () => {
     // Generate referral link logic
@@ -75,9 +96,14 @@ const CliqueDetailPage = () => {
 
       {/* Content */}
       <div className="p-6">
-        <div className="bg-green-600 rounded-full px-4 py-2 inline-block">
-          <span className="text-white font-medium">I'm game!</span>
-        </div>
+        {clique?.isActive && (
+          <button
+            onClick={() => router.push(`/plan/seal-vibe?cliqueId=${clique.id}`)}
+            className="bg-green-600 rounded-full px-4 py-2 inline-block text-white font-medium hover:bg-green-700 transition"
+          >
+            I'm game!
+          </button>
+        )}
 
         {/* Additional clique detail content */}
         <div className="mt-8">
@@ -91,6 +117,14 @@ const CliqueDetailPage = () => {
             <p>Clique activities and interactions will be displayed here</p>
           </div>
         </div>
+        {clique?.isActive === false && clique && (
+          <button
+            onClick={() => router.push(`/plan?cliqueId=${clique.id}`)}
+            className="mt-6 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition"
+          >
+            Create Plan
+          </button>
+        )}
       </div>
     </div>
   );

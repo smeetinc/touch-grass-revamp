@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LiaTimesCircleSolid } from "react-icons/lia";
 import { FaTimesCircle } from "react-icons/fa";
+import { useAuth } from "@/context/AuthContext";
 
 interface CreateCliqueModalProps {
   isOpen: boolean;
@@ -14,17 +15,31 @@ const CreateCliqueModal: React.FC<CreateCliqueModalProps> = ({
   isOpen,
   onClose,
 }) => {
+  const { walletAddress } = useAuth();
   const [cliqueName, setCliqueName] = useState("");
   const router = useRouter();
 
-  const handleCreateClique = (e: React.FormEvent) => {
+  const handleCreateClique = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (cliqueName.trim()) {
-      // Store clique name in localStorage or send to API
-      localStorage.setItem("currentClique", cliqueName.trim());
-      router.push("/clique");
+    if (!cliqueName.trim()) return;
+
+    try {
+      const res = await fetch("/api/clique", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: cliqueName.trim(), walletAddress }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      console.log("✅ Clique created:", data.clique);
+
       onClose();
       setCliqueName("");
+      router.push("/clique");
+    } catch (err) {
+      console.error("❌ Failed to create clique", err);
     }
   };
 
