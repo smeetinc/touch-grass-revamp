@@ -1,13 +1,13 @@
 // app/plan/page.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
-
+import React, { useState, useEffect, Suspense } from "react";
 import { ArrowLeft, Share, UserPlus, MessageCircle } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
-const PlanPage = () => {
+// Component that uses useSearchParams - needs to be wrapped in Suspense
+function PlanContent() {
   const { walletAddress } = useAuth();
   const searchParams = useSearchParams();
   const cliqueIdFromUrl = searchParams.get("cliqueId");
@@ -30,9 +30,15 @@ const PlanPage = () => {
 
   useEffect(() => {
     const fetchCliques = async () => {
-      const res = await fetch(`/api/clique/user/${walletAddress}`);
-      const data = await res.json();
-      setExistingCliques(data.cliques || []);
+      if (!walletAddress) return;
+
+      try {
+        const res = await fetch(`/api/clique/user/${walletAddress}`);
+        const data = await res.json();
+        setExistingCliques(data.cliques || []);
+      } catch (error) {
+        console.error("Error fetching cliques:", error);
+      }
     };
 
     if (!cliqueIdFromUrl && walletAddress) {
@@ -74,19 +80,25 @@ const PlanPage = () => {
           creator: walletAddress,
         });
 
-        const res = await fetch("/api/clique", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            name: newCliqueName.trim(),
-            walletAddress,
-          }),
-        });
+        try {
+          const res = await fetch("/api/clique", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              name: newCliqueName.trim(),
+              walletAddress,
+            }),
+          });
 
-        const data = await res.json();
-        cliqueId = data?.clique?._id;
+          const data = await res.json();
+          cliqueId = data?.clique?._id;
+        } catch (error) {
+          console.error("Error creating clique:", error);
+          alert("Failed to create clique");
+          return;
+        }
       } else if (selectedCliqueId) {
         cliqueId = selectedCliqueId;
       } else {
@@ -100,24 +112,29 @@ const PlanPage = () => {
       return;
     }
 
-    const res = await fetch("/api/plan", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        ...formData,
-        cliqueId,
-        creator: walletAddress,
-      }),
-    });
+    try {
+      const res = await fetch("/api/plan", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...formData,
+          cliqueId,
+          creator: walletAddress,
+        }),
+      });
 
-    const data = await res.json();
-    if (res.ok) {
-      router.push(`/clique/${cliqueId}`);
-    } else {
-      console.error("Failed to post plan", data.error);
-      alert("Error: " + data.error);
+      const data = await res.json();
+      if (res.ok) {
+        router.push(`/clique/${cliqueId}`);
+      } else {
+        console.error("Failed to post plan", data.error);
+        alert("Error: " + data.error);
+      }
+    } catch (error) {
+      console.error("Error posting plan:", error);
+      alert("Failed to post plan");
     }
   };
 
@@ -260,6 +277,7 @@ const PlanPage = () => {
               </button>
             </div>
           </div>
+
           {/* If no cliqueId in URL, show picker */}
           {!cliqueIdFromUrl && (
             <div className="mt-6 space-y-4">
@@ -315,6 +333,21 @@ const PlanPage = () => {
         </div>
       </div>
     </div>
+  );
+}
+
+// Main page component with Suspense wrapper
+const PlanPage = () => {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-white">Loading...</div>
+        </div>
+      }
+    >
+      <PlanContent />
+    </Suspense>
   );
 };
 

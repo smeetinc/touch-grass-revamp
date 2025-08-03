@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Share, UserPlus, Upload } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import MemoryMintedModal from "@/components/MemoryMintedModal";
+import { Suspense } from "react";
 
 interface PlanData {
   planTitle: string;
@@ -14,7 +15,7 @@ interface PlanData {
   isClique: boolean;
 }
 
-const SealVibePage = () => {
+function SealVibePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const cliqueId = searchParams.get("cliqueId");
@@ -264,7 +265,7 @@ const SealVibePage = () => {
       />
     </>
   );
-};
+}
 
 const Input = ({ label, value }: { label: string; value: string }) => (
   <div>
@@ -277,5 +278,19 @@ const Input = ({ label, value }: { label: string; value: string }) => (
     />
   </div>
 );
+
+const SealVibePage = () => {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-white">Loading...</div>
+        </div>
+      }
+    >
+      <SealVibePageContent />
+    </Suspense>
+  );
+};
 
 export default SealVibePage;
