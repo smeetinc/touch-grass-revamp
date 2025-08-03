@@ -6,6 +6,7 @@ import {
   useState,
   useEffect,
   ReactNode,
+  useRef,
 } from "react";
 import { useAccount } from "wagmi";
 import { useSignInEmail, useListAccounts } from "@0xsequence/connect";
@@ -35,17 +36,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [accountId, setAccountId] = useState<string | null>(null);
 
+  // Track processed combinations to prevent duplicates
+  const processedCombinations = useRef(new Set<string>());
+
   useEffect(() => {
-    if (walletAddress && email) {
+    if (walletAddress && email && email !== "") {
+      const combinationKey = `${walletAddress}-${email}`;
+
+      // Skip if we've already processed this combination
+      if (processedCombinations.current.has(combinationKey)) {
+        return;
+      }
+
+      // Add to processed set
+      processedCombinations.current.add(combinationKey);
+
       fetch("/api/user", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({ walletAddress, email }),
       })
         .then((res) => res.json())
         .then((data) => {
           console.log("User profile:", data.user);
         })
-        .catch((err) => console.error("User profile creation failed", err));
+        .catch((err) => {
+          console.error("User profile creation failed", err);
+          // Remove from processed set on error so it can be retried
+          processedCombinations.current.delete(combinationKey);
+        });
     }
   }, [walletAddress, email]);
 
@@ -54,6 +75,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setWalletAddress(address);
     } else {
       setWalletAddress(null);
+      // Clear processed combinations when wallet disconnects
+      processedCombinations.current.clear();
     }
   }, [address]);
 
