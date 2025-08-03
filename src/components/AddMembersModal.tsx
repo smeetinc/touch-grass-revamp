@@ -1,218 +1,157 @@
 // components/AddMembersModal.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Search, Users, UserPlus, X } from "lucide-react";
 
 interface AddMembersModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddMembers?: (selectedUsers: string[]) => void;
+  cliqueId: string;
+  currentMembers: string[]; // wallet addresses
+  onMembersAdded?: () => void;
 }
 
 interface User {
-  id: string;
-  name: string;
-  email: string;
-  avatar?: string;
+  _id: string;
+  walletAddress: string;
+  email?: string;
+  username?: string;
   isSelected: boolean;
 }
 
 const AddMembersModal: React.FC<AddMembersModalProps> = ({
   isOpen,
   onClose,
-  onAddMembers,
+  cliqueId,
+  currentMembers,
+  onMembersAdded,
 }) => {
-  const [activeTab, setActiveTab] = useState<"all" | "friends">("all");
+  const [users, setUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [users, setUsers] = useState<User[]>([
-    {
-      id: "1",
-      name: "John Doe",
-      email: "john@example.com",
-      isSelected: false,
-    },
-    {
-      id: "2",
-      name: "Jane Smith",
-      email: "jane@example.com",
-      isSelected: false,
-    },
-    {
-      id: "3",
-      name: "Mike Johnson",
-      email: "mike@example.com",
-      isSelected: false,
-    },
-    {
-      id: "4",
-      name: "Sarah Wilson",
-      email: "sarah@example.com",
-      isSelected: false,
-    },
-  ]);
 
-  const toggleUserSelection = (userId: string) => {
-    setUsers((prevUsers) =>
-      prevUsers.map((user) =>
-        user.id === userId ? { ...user, isSelected: !user.isSelected } : user
-      )
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const fetchUsers = async () => {
+      try {
+        const res = await fetch("/api/user");
+        const data = await res.json();
+
+        const filtered = data.users
+          .filter((user: any) => !currentMembers.includes(user.walletAddress))
+          .map((user: any) => ({
+            ...user,
+            isSelected: false,
+          }));
+
+        setUsers(filtered);
+      } catch (err) {
+        console.error("Failed to fetch users:", err);
+      }
+    };
+
+    fetchUsers();
+  }, [isOpen, currentMembers]);
+
+  const toggleSelect = (id: string) => {
+    setUsers((prev) =>
+      prev.map((u) => (u._id === id ? { ...u, isSelected: !u.isSelected } : u))
     );
   };
 
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase());
+  const handleDone = async () => {
+    const selectedWallets = users
+      .filter((u) => u.isSelected)
+      .map((u) => u.walletAddress);
 
-    if (activeTab === "friends") {
-      // You can add logic here to filter friends only
-      return matchesSearch;
+    if (selectedWallets.length === 0) return;
+
+    try {
+      await fetch(`/api/clique/${cliqueId}/add-member`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ members: selectedWallets }),
+      });
+
+      onClose();
+      onMembersAdded?.();
+    } catch (err) {
+      console.error("Failed to add members:", err);
+      alert("Something went wrong");
     }
-
-    return matchesSearch;
-  });
-
-  const selectedUsers = users.filter((user) => user.isSelected);
-
-  const handleDone = () => {
-    if (onAddMembers) {
-      onAddMembers(selectedUsers.map((user) => user.id));
-    }
-    onClose();
-    // Reset selections
-    setUsers((prevUsers) =>
-      prevUsers.map((user) => ({ ...user, isSelected: false }))
-    );
-    setSearchQuery("");
   };
 
-  const handleClose = () => {
-    onClose();
-    // Reset selections and search
-    setUsers((prevUsers) =>
-      prevUsers.map((user) => ({ ...user, isSelected: false }))
-    );
-    setSearchQuery("");
-  };
+  const filteredUsers = users.filter(
+    (user) =>
+      user.walletAddress?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.username?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
-      <div className="border rounded-2xl w-full max-w-md h-[600px] flex flex-col relative">
+    <div className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-black/70">
+      <div className="bg-[#111] w-full max-w-md rounded-2xl overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="p-6 border-b border-gray-700">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-white text-xl font-semibold">Add Members</h2>
-            <button
-              onClick={handleClose}
-              className="text-gray-400 hover:text-white transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
+        <div className="flex justify-between items-center px-6 py-4 border-b border-gray-700">
+          <h2 className="text-lg font-semibold text-white">Add Members</h2>
+          <X onClick={onClose} className="text-white cursor-pointer" />
+        </div>
 
-          {/* Tabs */}
-          <div className="flex space-x-4 mb-6">
-            <button
-              onClick={() => setActiveTab("all")}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-full border transition-colors ${
-                activeTab === "all"
-                  ? "border-green-500 bg-green-500/10 text-green-400"
-                  : "border-gray-600 text-gray-400 hover:border-gray-500"
-              }`}
-            >
-              <Users className="w-4 h-4" />
-              <span>all</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("friends")}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-full border transition-colors ${
-                activeTab === "friends"
-                  ? "border-green-500 bg-green-500/10 text-green-400"
-                  : "border-gray-600 text-gray-400 hover:border-gray-500"
-              }`}
-            >
-              <span>friends</span>
-            </button>
-
-            <button className="flex items-center justify-center w-10 h-10 rounded-full border border-gray-600 text-gray-400 hover:border-gray-500 transition-colors">
-              <UserPlus className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Search */}
+        {/* Search */}
+        <div className="px-6 py-3">
           <div className="relative">
-            <Search className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" />
+            <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by wallet, or email"
-              className="w-full bg-gray-800 text-gray-200 placeholder-gray-400 rounded-lg pl-12 pr-4 py-3 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              placeholder="Search users..."
+              className="w-full bg-gray-800 text-white rounded px-10 py-2 border border-gray-700"
             />
           </div>
         </div>
 
-        {/* User List */}
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="space-y-3">
-            {filteredUsers.length > 0 ? (
-              filteredUsers.map((user) => (
-                <div
-                  key={user.id}
-                  className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 transition-colors cursor-pointer"
-                  onClick={() => toggleUserSelection(user.id)}
-                >
-                  {/* Avatar */}
-                  <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center">
-                    <span className="text-white font-medium text-sm">
-                      {user.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")
-                        .toUpperCase()}
-                    </span>
-                  </div>
-
-                  {/* User Info */}
-                  <div className="flex-1">
-                    <div className="text-white font-medium">{user.name}</div>
-                    <div className="text-gray-400 text-sm">{user.email}</div>
-                  </div>
-
-                  {/* Selection Indicator */}
-                  <div
-                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                      user.isSelected
-                        ? "border-green-500 bg-green-500"
-                        : "border-gray-400"
-                    }`}
-                  >
-                    {user.isSelected && (
-                      <div className="w-2 h-2 bg-white rounded-full" />
-                    )}
-                  </div>
+        {/* Users List */}
+        <div className="flex-1 overflow-y-auto px-6">
+          {filteredUsers.length > 0 ? (
+            filteredUsers.map((user) => (
+              <div
+                key={user._id}
+                className="flex items-center justify-between py-2 border-b border-gray-800"
+              >
+                <div>
+                  <p className="text-white text-sm font-medium">
+                    {user.username || user.walletAddress.slice(0, 8)}...
+                  </p>
+                  <p className="text-xs text-gray-400">{user.email}</p>
                 </div>
-              ))
-            ) : (
-              <div className="text-center text-gray-400 py-8">
-                <p>No users found</p>
+                <button
+                  onClick={() => toggleSelect(user._id)}
+                  className={`px-3 py-1 rounded text-sm ${
+                    user.isSelected
+                      ? "bg-green-600 text-white"
+                      : "border border-gray-600 text-gray-400"
+                  }`}
+                >
+                  {user.isSelected ? "Selected" : "Add"}
+                </button>
               </div>
-            )}
-          </div>
+            ))
+          ) : (
+            <p className="text-center text-gray-500 py-6">No users found</p>
+          )}
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-gray-700">
+        <div className="p-4 border-t border-gray-700">
           <button
+            disabled={!users.some((u) => u.isSelected)}
             onClick={handleDone}
-            className="w-full bg-green-500 text-white py-3 rounded-lg hover:bg-green-600 transition-colors font-medium"
-            disabled={selectedUsers.length === 0}
+            className="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600 disabled:opacity-50"
           >
-            Done {selectedUsers.length > 0 && `(${selectedUsers.length})`}
+            Add Selected
           </button>
         </div>
       </div>

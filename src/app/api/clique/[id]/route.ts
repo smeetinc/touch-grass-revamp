@@ -4,11 +4,12 @@ import Clique from "@/models/Clique";
 
 export async function GET(
   req: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   await connectDB();
 
-  const { id } = await context.params;
+  const { id } = params;
+
   if (!id) {
     return NextResponse.json(
       { error: "Clique ID is required" },

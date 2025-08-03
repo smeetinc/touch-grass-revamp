@@ -4,12 +4,14 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Share, UserPlus } from "lucide-react";
 import { useParams } from "next/navigation";
+import HeaderActions from "@/components/HeaderActions";
 
 interface Clique {
   id: string;
   name: string;
   memberCount: number;
   isActive?: boolean;
+  members: string[];
 }
 
 const CliqueDetailPage = () => {
@@ -31,6 +33,7 @@ const CliqueDetailPage = () => {
             name: data.clique.name,
             memberCount: data.clique.members.length,
             isActive: data.clique.isActive,
+            members: data.clique.members,
           });
         } else {
           console.error("Error fetching clique:", data.error);
@@ -68,31 +71,12 @@ const CliqueDetailPage = () => {
   return (
     <div className="min-h-screen pb-20">
       {/* Header */}
-      <div className="bg-green-600 p-4 flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={() => router.back()}
-            className="text-white hover:bg-green-700 p-1 rounded transition-colors"
-          >
-            <ArrowLeft className="w-6 h-6" />
-          </button>
-          <h1 className="text-white text-lg font-medium">Clique Name</h1>
-        </div>
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={handleShare}
-            className="text-white hover:bg-green-700 p-2 rounded transition-colors"
-          >
-            <Share className="w-5 h-5" />
-          </button>
-          <button
-            onClick={handleInviteUsers}
-            className="text-white hover:bg-green-700 p-2 rounded transition-colors"
-          >
-            <UserPlus className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
+      <HeaderActions
+        title="Clique"
+        showAddMembers={true}
+        cliqueId={clique?.id}
+        currentMembers={clique?.members || []}
+      />
 
       {/* Content */}
       <div className="p-6">
