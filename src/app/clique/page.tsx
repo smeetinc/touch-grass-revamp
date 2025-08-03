@@ -10,6 +10,7 @@ interface Clique {
   id: string;
   name: string;
   memberCount: number;
+  members?: string[]; // Add members array for the modal
 }
 
 const CliquePage = () => {
@@ -18,6 +19,7 @@ const CliquePage = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [cliques, setCliques] = useState<Clique[]>([]);
+  const [selectedClique, setSelectedClique] = useState<Clique | null>(null);
 
   useEffect(() => {
     const fetchCliques = async () => {
@@ -31,6 +33,7 @@ const CliquePage = () => {
           id: clique._id,
           name: clique.name,
           memberCount: clique.members.length,
+          members: clique.members, // Include members for the modal
         }));
 
         setCliques(mapped);
@@ -53,8 +56,9 @@ const CliquePage = () => {
     alert("Referral link copied to clipboard!");
   };
 
-  const handleInviteUsers = () => {
-    // Logic to invite existing app users to clique
+  const handleInviteUsers = (clique: Clique) => {
+    // Set the selected clique and open modal
+    setSelectedClique(clique);
     setAddMembers(true);
   };
 
@@ -63,6 +67,38 @@ const CliquePage = () => {
     localStorage.setItem("selectedClique", JSON.stringify(clique));
     router.push(`/clique/${clique.id}`);
   };
+
+  const handleCloseModal = () => {
+    setAddMembers(false);
+    setSelectedClique(null);
+    // Re-fetch cliques to get updated member counts
+    if (walletAddress) {
+      const fetchCliques = async () => {
+        try {
+          const res = await fetch(`/api/clique?walletAddress=${walletAddress}`);
+          const data = await res.json();
+          const mapped = data.cliques.map((clique: any) => ({
+            id: clique._id,
+            name: clique.name,
+            memberCount: clique.members.length,
+            members: clique.members,
+          }));
+          setCliques(mapped);
+        } catch (err) {
+          console.error("Error fetching cliques", err);
+        }
+      };
+      fetchCliques();
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-20">
@@ -75,7 +111,7 @@ const CliquePage = () => {
           >
             <ArrowLeft className="w-6 h-6" />
           </button>
-          <h1 className="text-white text-lg font-medium">Clique Name</h1>
+          <h1 className="text-white text-lg font-medium">My Cliques</h1>
         </div>
         <div className="flex items-center space-x-2">
           <button
@@ -84,41 +120,62 @@ const CliquePage = () => {
           >
             <Share className="w-5 h-5" />
           </button>
-          <button
-            onClick={handleInviteUsers}
-            className="text-white hover:bg-green-700 p-2 rounded transition-colors"
-          >
-            <UserPlus className="w-5 h-5" />
-          </button>
         </div>
       </div>
 
       {/* Content */}
       <div className="p-6">
-        <div className="space-y-4">
-          {cliques.map((clique) => (
-            <div key={clique.id} className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-medium text-sm">
-                  {clique.name.charAt(0).toUpperCase()}
-                </span>
-              </div>
-              <button
-                onClick={() => handleCliqueClick(clique)}
-                className="text-white text-lg hover:text-green-400 transition-colors"
+        {cliques.length === 0 ? (
+          <div className="text-center text-gray-400 mt-8">
+            <p>No cliques found. Create your first clique!</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {cliques.map((clique) => (
+              <div
+                key={clique.id}
+                className="flex items-center justify-between bg-gray-800 p-4 rounded-lg"
               >
-                {clique.name}
-              </button>
-            </div>
-          ))}
-        </div>
-        <div>
-          <AddMembersModal
-            isOpen={addMembers}
-            onClose={() => setAddMembers(false)}
-          />
-        </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center">
+                    <span className="text-white font-medium text-sm">
+                      {clique.name.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div>
+                    <button
+                      onClick={() => handleCliqueClick(clique)}
+                      className="text-white text-lg hover:text-green-400 transition-colors text-left"
+                    >
+                      {clique.name}
+                    </button>
+                    <p className="text-gray-400 text-sm">
+                      {clique.memberCount} members
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleInviteUsers(clique)}
+                  className="text-green-400 hover:bg-green-700 hover:text-white p-2 rounded transition-colors"
+                  title="Add members"
+                >
+                  <UserPlus className="w-5 h-5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
+
+      {/* Add Members Modal */}
+      {selectedClique && (
+        <AddMembersModal
+          isOpen={addMembers}
+          onClose={handleCloseModal}
+          cliqueId={selectedClique.id}
+          currentMembers={selectedClique.members || []}
+        />
+      )}
     </div>
   );
 };
