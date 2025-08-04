@@ -2,6 +2,33 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/models/User";
 
+// GET method to fetch all users for the add members modal
+export async function GET(req: Request) {
+  await connectDB();
+
+  try {
+    const users = await User.find(
+      {},
+      {
+        walletAddress: 1,
+        email: 1,
+        username: 1,
+        avatar: 1,
+        _id: 1,
+      }
+    ).sort({ joinedAt: -1 }); // Sort by newest first
+
+    return NextResponse.json({ users });
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch users" },
+      { status: 500 }
+    );
+  }
+}
+
+// Your existing POST method
 export async function POST(req: Request) {
   await connectDB();
   const { walletAddress, email } = await req.json();
