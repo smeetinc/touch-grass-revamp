@@ -99,8 +99,10 @@ graph TD
 - Stores IPFS hash as metadata on the tokenURI.
 
 - Prevents duplicate minting per plan.
+  
 
 All our contracts are deployed to the Etherlink Testnet using Hardhat and the Sequence Wallet as the signer.
+
 
 ### Tech Tools (Smart Contract):
 
@@ -109,6 +111,7 @@ All our contracts are deployed to the Etherlink Testnet using Hardhat and the Se
 - **Sequence Signer:** For secure deployment.
 
 - **IPFS:** For off-chain memory storage.
+  
 
 ## Post Hackathon Update
 - Currently debugging and working on the Mint memory NFT section of the product.
