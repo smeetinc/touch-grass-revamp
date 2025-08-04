@@ -8,7 +8,7 @@ import MemoryMintedModal from "@/components/MemoryMintedModal";
 import { Suspense } from "react";
 
 interface PlanData {
-  title: string;
+  planTitle: string;
   location: string;
   time: string;
   vibeCheck: string;
@@ -183,7 +183,7 @@ function SealVibePageContent() {
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <Input label="Plan Title" value={planData.title} />
+            <Input label="Plan Title" value={planData.planTitle} />
             <Input label="Location" value={planData.location} />
             <Input label="Time" value={planData.time} />
             <Input label="Vibe Check" value={planData.vibeCheck} />
