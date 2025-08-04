@@ -1,36 +1,114 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TouchGrass
 
-## Getting Started
+**TouchGrass** is a coordination and memory minting dApp for IRL plans, designed for friend groups and micro-communities. It enables users to create plans, invite others, accept participation, and commemorate shared experiences on-chain through NFTs.
 
-First, run the development server:
+Built on **Etherlink Testnet**, it uses **Sequence Wallet** for seamless Web3 onboarding and **IPFS** for storage.
+## Features (MVP)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Sequence wallet onboarding and session management  
+- Create and accept IRL plans  
+- Upload and store IRL memory moments  
+- Mint shared memories as NFTs  
+- Etherlink RPC support  
+
+## User Flow
+
+This diagram illustrates the core user flow of `touchgrass`:
+
+ ```mermaid
+ sequenceDiagram
+     actor U as User
+     participant A as touchgrass App
+     participant S as Etherlink Smart Contract
+     participant IPFS
+
+     U->>A: visits dApp
+     U->>A: Connects Wallet (Sequence)
+
+     U->>A: Creates Plan (/create-plan)
+     A->>S: Records plan & invitees
+     S-->>A: Plan ID created
+
+     U->>A: Accepts Plan (/accept)
+     A->>S: Calls accept()
+     S-->>A: Attestation recorded
+
+     U->>A: Uploads Memory (/memory)
+     A->>IPFS: Stores image/video
+     IPFS-->>A: Returns IPFS hash
+
+     U->>A: Mints NFT (/mint)
+     A->>S: Calls mint() with IPFS hash
+     S-->>A: NFT minted & returned
+ ```
+
+## Frontend Architecture (Tech tools)
+
+- **Next.js** – React-based framework for building server-side rendered apps  
+- **TailwindCSS** – Utility-first styling framework  
+- **Sequence Wallet** – Manages user sessions and blockchain interaction  
+- **IPFS** – Stores uploaded memory files off-chain  
+
+### Wallet Integration – Sequence
+Sequence SDK is used for abstracted wallet and user session management with options for:
+
+- Gmail login
+- Web3-native signing
+- Smart contract wallet abstraction
+
+Which is used for:
+
+- Connecting user wallets
+- Signing smart contract transactions
+- Interacting with Etherlink RPC network
+
+ 
+## Etherlink Integration
+
+This diagram outlines the core components of the application and how the smart contract comes in.
+
+```mermaid
+graph TD
+    User_Interface --> Sequence_Wallet_SDK
+    Sequence_Wallet_SDK --> EthersJS_Client
+    EthersJS_Client --> PlanManager_Contract
+    EthersJS_Client --> MemoryNFT_Contract
+
+    PlanManager_Contract -- Attestations --> EAS
+    MemoryNFT_Contract -- Metadata --> IPFS
 ```
+### Smart Contract Architecture
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**PlanManager.sol:**
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Manages plan creation and acceptance.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Stores a list of invitees per plan.
 
-## Learn More
+- Emits events on plan creation and acceptance.
 
-To learn more about Next.js, take a look at the following resources:
+- Attests accepted friendships on-chain using Ethereum Attestation Service (EAS).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**MemoryNFT.sol:**
 
-## Deploy on Vercel
+- Enables users to mint a memory NFT associated with a plan.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Validates that only invited and accepted users can mint.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Stores IPFS hash as metadata on the tokenURI.
+
+- Prevents duplicate minting per plan.
+
+All our contracts are deployed to the Etherlink Testnet using Hardhat and the Sequence Wallet as the signer.
+
+### Tech Tools (Smart Contract):
+
+- **Hardhat:** Compilation, scripting, and local testing.
+
+- **Sequence Signer:** For secure deployment.
+
+- **IPFS:** For off-chain memory storage.
+
+## Post Hackathon Update
+- Currently debugging and working on the Mint memory NFT section of the product.
