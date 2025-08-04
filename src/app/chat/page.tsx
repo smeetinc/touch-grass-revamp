@@ -3,6 +3,8 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Share, UserPlus } from "lucide-react";
+import Image from "next/image";
+import Logo from "../../../public/logo.png";
 
 const ChatPage = () => {
   const router = useRouter();
@@ -53,24 +55,8 @@ const ChatPage = () => {
       {/* Content */}
       <div className="flex flex-col items-center justify-center min-h-[70vh] p-6">
         {/* Logo/Icon */}
-        <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-8">
-          <div className="relative">
-            {/* Leaf icon */}
-            <svg className="w-10 h-10" viewBox="0 0 40 40" fill="none">
-              {/* Dark green leaf */}
-              <path
-                d="M20 8C24 8 30 12 30 20C30 28 24 32 20 32C20 24 20 16 20 8Z"
-                fill="#16a34a"
-              />
-              {/* Light green leaf */}
-              <path
-                d="M20 8C16 8 10 12 10 20C10 28 16 32 20 32C20 24 20 16 20 8Z"
-                fill="#22c55e"
-              />
-            </svg>
-          </div>
-        </div>
 
+        <Image src={Logo} alt="TouchGrass Logo" />
         {/* Text Content */}
         <div className="text-center space-y-4">
           <h2 className="text-green-400 text-2xl font-semibold">
